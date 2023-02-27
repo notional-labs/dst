@@ -9,7 +9,7 @@ import (
 )
 
 //go:embed all:nursery/*
-var f embed.FS
+var nursery embed.FS
 
 func main() {
 	err := Refactor("oldString", "newString", "*.txt", "*.json")
