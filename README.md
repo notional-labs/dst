@@ -1,2 +1,2 @@
 # dst
-scaffolding tool for use with nursery
+scaffolding tool for use with chicken
