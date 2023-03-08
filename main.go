@@ -3,6 +3,8 @@ package main
 import (
 	"embed"
 	"fmt"
+	"io"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
@@ -19,48 +21,37 @@ func main() {
 		return
 	}
 
-	// Get the full module path from the command-line argument
-	modulePath := os.Args[1]
-
 	// Extract the repository name from the module path
+	modulePath := os.Args[1]
 	repoName := strings.TrimPrefix(modulePath, "github.com/")
-	repoName = strings.TrimSuffix(repoName, filepath.Ext(repoName))
+	repoName = strings.Split(repoName, "/")[1]
 
-	// Capitalize the first letter of the repository name
-	capRepoName := strings.Title(repoName)
+	// Refactor the contents of the embedded file system
+	refactor("nursery", repoName, "*.go", "*.m", "*.md")
+	refactor("Nursery", strings.Title(repoName), "*.go", "*.m", "*.md")
 
-	// Print the full module path, repository name and capitalized repository name
-	fmt.Printf("Full module path: %s\n", modulePath)
-	fmt.Printf("Repository name: %s\n", repoName)
-	fmt.Printf("Capitalized repository name: %s\n", capRepoName)
-
-	Refactor("nursery", repoName, "*.go", "*.m", "*.md")
-	Refactor("Nursery", capRepoName, "*.go", "*.m", "*.md")
+	// Write the embedded file system to disk in a folder named after the repository name
+	if err := os.Mkdir(repoName, 0o777); err != nil {
+		fmt.Printf("Failed to create directory %s: %v\n", repoName, err)
+		return
+	}
+	if err := fs.WalkDir(nursery, ".", fsCopyFunc(repoName, nursery)); err != nil {
+		fmt.Printf("Failed to copy embedded filesystem to directory %s: %v\n", repoName, err)
+		return
+	}
+	fmt.Printf("Embedded filesystem written to directory %s\n", repoName)
 }
 
-func Refactor(old, new string, patterns ...string) error {
-	return filepath.Walk(".", refactorFunc(old, new, patterns))
-}
-
-func refactorFunc(old, new string, filePatterns []string) filepath.WalkFunc {
-	return filepath.WalkFunc(func(path string, fi os.FileInfo, err error) error {
-		if err != nil {
+func refactor(old, new string, patterns ...string) error {
+	return filepath.Walk(".", func(path string, fi fs.FileInfo, err error) error {
+		if err != nil || fi.IsDir() {
 			return err
 		}
 
-		if !!fi.IsDir() {
-			return nil
-		}
-
-		var matched bool
-		for _, pattern := range filePatterns {
-			var err error
-			matched, err = filepath.Match(pattern, fi.Name())
-			if err != nil {
+		for _, pattern := range patterns {
+			if matched, err := filepath.Match(pattern, fi.Name()); err != nil {
 				return err
-			}
-
-			if matched {
+			} else if matched {
 				read, err := os.ReadFile(path)
 				if err != nil {
 					return err
@@ -68,15 +59,44 @@ func refactorFunc(old, new string, filePatterns []string) filepath.WalkFunc {
 
 				fmt.Println("Refactoring:", path)
 
-				newContents := strings.Replace(string(read), old, new, -1)
+				newContents := strings.ReplaceAll(string(read), old, new)
 
-				err = os.WriteFile(path, []byte(newContents), 0)
+				err = os.WriteFile(path, []byte(newContents), 0o666)
 				if err != nil {
 					return err
 				}
+				break // move to the next file
 			}
 		}
-
 		return nil
 	})
+}
+
+func fsCopyFunc(dst string, src embed.FS) func(string, fs.DirEntry, error) error {
+	return func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+
+		if d.IsDir() {
+			return os.Mkdir(filepath.Join(dst, path), 0o666)
+		}
+
+		out, err := os.OpenFile(filepath.Join(dst, path), os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0o666)
+		if err != nil {
+			return err
+		}
+		defer out.Close()
+
+		in, err := src.Open(path)
+		if err != nil {
+			return err
+		}
+		defer in.Close()
+
+		if _, err := io.Copy(out, in); err != nil {
+			return err
+		}
+		return nil
+	}
 }
