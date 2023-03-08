@@ -12,10 +12,30 @@ import (
 var nursery embed.FS
 
 func main() {
-	err := Refactor("oldString", "newString", "*.txt", "*.json")
-	if err != nil {
-		panic(err)
+	// Check if a command-line argument is provided
+	if len(os.Args) < 2 {
+		fmt.Println("Usage: dst github.com/yourname/yourrepo")
+		fmt.Println("yourrepo will be used as the name of the new chain, based on Nursery at https://github.com/notional-labs/nursery")
+		return
 	}
+
+	// Get the full module path from the command-line argument
+	modulePath := os.Args[1]
+
+	// Extract the repository name from the module path
+	repoName := strings.TrimPrefix(modulePath, "github.com/")
+	repoName = strings.TrimSuffix(repoName, filepath.Ext(repoName))
+
+	// Capitalize the first letter of the repository name
+	capRepoName := strings.Title(repoName)
+
+	// Print the full module path, repository name and capitalized repository name
+	fmt.Printf("Full module path: %s\n", modulePath)
+	fmt.Printf("Repository name: %s\n", repoName)
+	fmt.Printf("Capitalized repository name: %s\n", capRepoName)
+
+	Refactor("nursery", repoName, "*.go", "*.m", "*.md")
+	Refactor("Nursery", capRepoName, "*.go", "*.m", "*.md")
 }
 
 func Refactor(old, new string, patterns ...string) error {
