@@ -76,5 +76,11 @@ func main() {
 		log.Fatalf("failed to replace text in files: %v", err)
 	}
 
-	fmt.Println("Successfully cloned and renamed repository!")
+	// Remove the .git folder
+	err = os.RemoveAll(filepath.Join(newName, ".git"))
+	if err != nil {
+		log.Fatalf("failed to remove .git folder: %v", err)
+	}
+
+	fmt.Println("Successfully cloned, renamed, and removed .git folder!")
 }
