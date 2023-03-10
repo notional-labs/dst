@@ -9,11 +9,16 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/kyokomi/emoji/v2"
+
 	git "github.com/go-git/go-git/v5"
 )
 
 func main() {
 	reader := bufio.NewReader(os.Stdin)
+
+	emoji.Println(":rocket: Welcome to the Nurseryd project generator!")
+	emoji.Println(":exclamation: Today we will be using the Nursery template.  It features CosmWasm and the Strangelove IBC suite.")
 
 	fmt.Print("Enter the go module path: ")
 	modulePath, err := reader.ReadString('\n')
@@ -45,7 +50,7 @@ func main() {
 			return err
 		}
 		if info.IsDir() {
-			if info.Name() == "nursery" {
+			if info.Name() == "nurseryd" {
 				// Rename the folder with the new name
 				newPath := filepath.Join(filepath.Dir(path), newName)
 				err := os.Rename(path, newPath)
@@ -65,7 +70,7 @@ func main() {
 		// Replace the text and write back to the file
 		newContent := strings.ReplaceAll(string(content), "nursery", newName)
 		newContent = strings.ReplaceAll(newContent, "Nursery", strings.Title(newName))
-		newContent = strings.Replace(newContent, "github.com/notional-labs/nursery", modulePath, -1)
+		newContent = strings.ReplaceAll(newContent, "github.com/notional-labs/nursery", modulePath)
 		err = ioutil.WriteFile(path, []byte(newContent), info.Mode())
 		if err != nil {
 			return err
@@ -82,5 +87,7 @@ func main() {
 		log.Fatalf("failed to remove .git folder: %v", err)
 	}
 
-	fmt.Println("Successfully cloned, renamed, and removed .git folder!")
+	emoji.Println(":checkmark: Done!")
+	emoji.Println(":question: Next, you can do like: cd " + newName + " && go mod tidy && go install ./...")
+	emoji.Println(":mind-blown: Then you can run your new project with: " + newName + "d start")
 }

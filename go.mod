@@ -2,7 +2,10 @@ module github.com/notional-labs/dst
 
 go 1.20
 
-require github.com/go-git/go-git/v5 v5.6.0
+require (
+	github.com/go-git/go-git/v5 v5.6.0
+	github.com/kyokomi/emoji/v2 v2.2.12
+)
 
 require (
 	github.com/Microsoft/go-winio v0.5.2 // indirect
