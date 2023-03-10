@@ -45,7 +45,7 @@ func main() {
 			return err
 		}
 		if info.IsDir() {
-			if info.Name() == "nurseryd" {
+			if info.Name() == "nursery" {
 				// Rename the folder with the new name
 				newPath := filepath.Join(filepath.Dir(path), newName)
 				err := os.Rename(path, newPath)
