@@ -49,10 +49,26 @@ func main() {
 		if err != nil {
 			return err
 		}
+
+		// Read the contents of the file
+		content, err := ioutil.ReadFile(path)
+		if err != nil {
+			return err
+		}
+
+		// Replace the text and write back to the file
+		newContent := strings.ReplaceAll(string(content), "github.com/notional-labs/nursery", modulePath)
+		newContent = strings.ReplaceAll(string(newContent), "nursery", newName)
+		newContent = strings.ReplaceAll(newContent, "Nursery", strings.Title(newName))
+		err = ioutil.WriteFile(path, []byte(newContent), info.Mode())
+		if err != nil {
+			return err
+		}
+
 		if info.IsDir() {
 			if info.Name() == "nurseryd" {
 				// Rename the folder with the new name
-				newPath := filepath.Join(filepath.Dir(path), newName)
+				newPath := filepath.Join(filepath.Dir(path), newName+"d")
 				err := os.Rename(path, newPath)
 				if err != nil {
 					return err
@@ -61,20 +77,7 @@ func main() {
 			}
 			return nil
 		}
-		// Read the contents of the file
-		content, err := ioutil.ReadFile(path)
-		if err != nil {
-			return err
-		}
 
-		// Replace the text and write back to the file
-		newContent := strings.ReplaceAll(string(content), "nursery", newName)
-		newContent = strings.ReplaceAll(newContent, "Nursery", strings.Title(newName))
-		newContent = strings.ReplaceAll(newContent, "github.com/notional-labs/nursery", modulePath)
-		err = ioutil.WriteFile(path, []byte(newContent), info.Mode())
-		if err != nil {
-			return err
-		}
 		return nil
 	})
 	if err != nil {
