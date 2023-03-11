@@ -14,6 +14,7 @@ import (
 	git "github.com/go-git/go-git/v5"
 )
 
+// break this program into functions
 func main() {
 	reader := bufio.NewReader(os.Stdin)
 
@@ -50,15 +51,6 @@ func main() {
 			return err
 		}
 		if info.IsDir() {
-			if info.Name() == "nurseryd" {
-				// Rename the folder with the new name
-				newPath := filepath.Join(filepath.Dir(path), newName)
-				err := os.Rename(path, newPath)
-				if err != nil {
-					return err
-				}
-				return filepath.SkipDir
-			}
 			// Rename the folder with the new name
 			newPath := filepath.Join(filepath.Dir(path), strings.Replace(path, newName, moduleParts[1]+"/"+newName, 1))
 			err := os.Rename(path, newPath)
