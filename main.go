@@ -44,12 +44,29 @@ func main() {
 		log.Fatalf("failed to clone repository: %v", err)
 	}
 
-	// Traverse the directory tree and replace the text in files
+	// Traverse the directory tree and rename folders and files
 	err = filepath.Walk(newName, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
-
+		if info.IsDir() {
+			if info.Name() == "nurseryd" {
+				// Rename the folder with the new name
+				newPath := filepath.Join(filepath.Dir(path), newName)
+				err := os.Rename(path, newPath)
+				if err != nil {
+					return err
+				}
+				return filepath.SkipDir
+			}
+			// Rename the folder with the new name
+			newPath := filepath.Join(filepath.Dir(path), strings.Replace(path, newName, moduleParts[1]+"/"+newName, 1))
+			err := os.Rename(path, newPath)
+			if err != nil {
+				return err
+			}
+			return nil
+		}
 		// Read the contents of the file
 		content, err := ioutil.ReadFile(path)
 		if err != nil {
@@ -57,27 +74,19 @@ func main() {
 		}
 
 		// Replace the text and write back to the file
-		newContent := strings.ReplaceAll(string(content), "github.com/notional-labs/nursery", modulePath)
-		newContent = strings.ReplaceAll(string(newContent), "nursery", newName)
+		newContent := strings.ReplaceAll(string(content), "nursery", newName)
 		newContent = strings.ReplaceAll(newContent, "Nursery", strings.Title(newName))
+		newContent = strings.ReplaceAll(newContent, "github.com/notional-labs/nursery", modulePath)
 		err = ioutil.WriteFile(path, []byte(newContent), info.Mode())
 		if err != nil {
 			return err
 		}
-
-		if info.IsDir() {
-			if info.Name() == "nurseryd" {
-				// Rename the folder with the new name
-				newPath := filepath.Join(filepath.Dir(path), newName+"d")
-				err := os.Rename(path, newPath)
-				if err != nil {
-					return err
-				}
-				return filepath.SkipDir
-			}
-			return nil
+		// Rename the file with the new name
+		newPath := filepath.Join(filepath.Dir(path), strings.Replace(path, newName, moduleParts[1]+"/"+newName, 1))
+		err = os.Rename(path, newPath)
+		if err != nil {
+			return err
 		}
-
 		return nil
 	})
 	if err != nil {
@@ -90,7 +99,5 @@ func main() {
 		log.Fatalf("failed to remove .git folder: %v", err)
 	}
 
-	emoji.Println(":checkmark: Done!")
-	emoji.Println(":question: Next, you can do like: cd " + newName + " && go mod tidy && go install ./...")
-	emoji.Println(":mind-blown: Then you can run your new project with: " + newName + "d start")
+	emoji.Println(":tada: Your project is ready!  Happy coding!")
 }
